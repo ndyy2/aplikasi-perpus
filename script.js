@@ -208,7 +208,7 @@ function renderBuku() {
         <td>${b.judul}</td>
         <td>${b.penulis}</td>
         <td>${b.tahun}</td>
-        <td><span class="badge ${badgeClass}">${b.status}</span></td>
+        <td><span class="badge ${badgeClass}">${b.status === 'Dipinjam' ? 'Kosong' : b.status}</span></td>
         <td>
             <div class="action-buttons">
                 <button class="btn-icon edit" onclick="editBuku('${b.id}')" title="Edit">
