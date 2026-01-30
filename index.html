@@ -77,6 +77,11 @@
           <input type="text" id="judul" placeholder="Judul Buku">
           <input type="text" id="penulis" placeholder="Penulis">
           <input type="number" id="tahun" placeholder="Tahun Terbit">
+          <select id="statusBuku">
+            <option value="Tersedia">Tersedia</option>
+            <option value="Dipinjam">Dipinjam</option>
+            <option value="Hilang">Hilang</option>
+          </select>
           <button id="btn-simpan" onclick="tambahBuku()"><i class="fa-solid fa-plus"></i> Tambah Buku</button>
           <button id="btn-batal" onclick="batalEdit()" class="secondary" style="display: none;"><i
               class="fa-solid fa-xmark"></i> Batal Edit</button>
@@ -110,9 +115,15 @@
           <select id="pilihBuku">
             <option value="">-- Pilih Buku --</option>
           </select>
+          <select id="statusPinjam">
+            <option value="Dipinjam">Dipinjam</option>
+            <option value="Dikembalikan">Dikembalikan</option>
+          </select>
           <input type="date" id="tanggalPinjam">
-          <button id="btn-simpan-pinjam" onclick="tambahPinjam()"><i class="fa-solid fa-file-signature"></i> Simpan
-            Peminjaman</button>
+          <button id="btn-simpan-pinjam" onclick="tambahPinjam()" style="min-width: 200px;"><i
+              class="fa-solid fa-file-signature"></i> Simpan Peminjaman</button>
+          <button id="btn-batal-pinjam" onclick="batalEditPinjam()" class="secondary" style="display: none;"><i
+              class="fa-solid fa-xmark"></i> Batal Edit</button>
         </div>
 
         <div class="table-container">

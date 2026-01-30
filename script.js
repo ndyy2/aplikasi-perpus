@@ -88,6 +88,7 @@ function tambahBuku() {
   const judul = document.getElementById('judul').value;
   const penulis = document.getElementById('penulis').value;
   const tahun = document.getElementById('tahun').value;
+  const status = document.getElementById('statusBuku').value;
 
   if (judul && penulis && tahun) {
     const isEdit = !!data.editingId;
@@ -102,7 +103,7 @@ function tambahBuku() {
         // Logic Update
         const index = data.buku.findIndex(b => b.id === data.editingId);
         if (index !== -1) {
-          data.buku[index] = { ...data.buku[index], judul, penulis, tahun };
+          data.buku[index] = { ...data.buku[index], judul, penulis, tahun, status };
           saveData();
           alert('Data buku berhasil diperbarui!');
           batalEdit(); // Reset form
@@ -114,7 +115,7 @@ function tambahBuku() {
           judul,
           penulis,
           tahun,
-          status: 'Tersedia'
+          status: status || 'Tersedia'
         });
         saveData();
         alert('Buku berhasil ditambahkan!');
@@ -122,6 +123,7 @@ function tambahBuku() {
         document.getElementById('judul').value = '';
         document.getElementById('penulis').value = '';
         document.getElementById('tahun').value = '';
+        document.getElementById('statusBuku').value = 'Tersedia';
       }
       setLoading(btnId, false, defaultText, icon);
     });
@@ -136,6 +138,7 @@ function batalEdit() {
   document.getElementById('judul').value = '';
   document.getElementById('penulis').value = '';
   document.getElementById('tahun').value = '';
+  document.getElementById('statusBuku').value = 'Tersedia';
 
   const btnSimpan = document.getElementById('btn-simpan');
   btnSimpan.innerHTML = '<i class="fa-solid fa-plus"></i> Tambah Buku';
@@ -149,17 +152,18 @@ function editBuku(id) {
     document.getElementById('judul').value = buku.judul;
     document.getElementById('penulis').value = buku.penulis;
     document.getElementById('tahun').value = buku.tahun;
+    document.getElementById('statusBuku').value = buku.status;
 
     data.editingId = id;
     const btnSimpan = document.getElementById('btn-simpan');
     btnSimpan.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan';
     document.getElementById('btn-batal').style.display = 'inline-block';
 
-    document.querySelector('.form-group').scrollIntoView({ behavior: 'smooth' });
+    document.querySelector('#buku .form-group').scrollIntoView({ behavior: 'smooth' });
   }
 }
 
-function toggleMenu(id) {
+function toggleMenu(id, event) {
   document.querySelectorAll('.dropdown-menu').forEach(menu => {
     if (menu.id !== 'menu-' + id) menu.classList.remove('show');
   });
@@ -167,7 +171,7 @@ function toggleMenu(id) {
   const menu = document.getElementById('menu-' + id);
   if (menu) menu.classList.toggle('show');
 
-  event.stopPropagation();
+  if (event) event.stopPropagation();
 }
 
 // Tutup menu saat klik di luar
@@ -189,9 +193,14 @@ function renderBuku() {
   data.buku.forEach((b, i) => {
     if (!b.status) b.status = 'Tersedia';
 
-    let badgeClass = b.status === 'Tersedia' ? 'available' : 'borrowed';
-    let btnDisabled = b.status === 'Dipinjam' ? 'disabled' : '';
-    let btnStyle = b.status === 'Dipinjam' ? 'opacity: 0.5; cursor: not-allowed;' : '';
+    let badgeClass;
+    if (b.status === 'Tersedia') badgeClass = 'available';
+    else if (b.status === 'Dipinjam') badgeClass = 'borrowed';
+    else badgeClass = 'returned'; // For 'Hilang' or others
+
+    // Disable delete if borrowed, but allow edit
+    let deleteDisabled = b.status === 'Dipinjam' ? 'disabled' : '';
+    let deleteStyle = b.status === 'Dipinjam' ? 'opacity: 0.5; cursor: not-allowed;' : '';
 
     tbody.innerHTML += `
       <tr>
@@ -205,7 +214,7 @@ function renderBuku() {
                 <button class="btn-icon edit" onclick="editBuku('${b.id}')" title="Edit">
                     <i class="fa-solid fa-pen-to-square"></i>
                 </button>
-                <button class="btn-icon delete" onclick="hapusBuku('${b.id}')" ${btnDisabled} style="${btnStyle}" title="Hapus">
+                <button class="btn-icon delete" onclick="hapusBuku('${b.id}')" ${deleteDisabled} style="${deleteStyle}" title="Hapus">
                     <i class="fa-solid fa-trash"></i>
                 </button>
             </div>
@@ -315,28 +324,8 @@ function renderAnggota() {
   });
 }
 
-/*  Logika Peminjaman  */
-function renderPinjam() {
-  const tbody = document.getElementById('listPinjam');
-  tbody.innerHTML = '';
-  data.pinjam.forEach((p, i) => {
-    const anggota = data.anggota.find(a => a.id === p.anggotaId);
-    const buku = data.buku.find(b => b.id === p.bukuId);
-    const badgeClass = p.status === 'Dipinjam' ? 'borrowed' : 'available';
+/*  Logika Peminjaman (Edited) */
 
-    tbody.innerHTML += `
-      < tr >
-        <td>${i + 1}</td>
-        <td>${anggota ? anggota.nama : 'Tidak Ditemukan'}</td>
-        <td>${buku ? buku.judul : 'Tidak Ditemukan'}</td>
-        <td>${formatDate(p.tanggal)}</td>
-        <td><span class="badge ${badgeClass}">${p.status}</span></td>
-        <td>
-          ${p.status === 'Dipinjam' ? `<button class="btn-action" onclick="kembalikanBuku('${p.id}')">Kembalikan</button>` : '-'}
-        </td>
-      </tr > `;
-  });
-}
 
 function populateSelects() {
   const selectAnggota = document.getElementById('pilihAnggota');
@@ -351,8 +340,12 @@ function populateSelects() {
   });
 
   selectBuku.innerHTML = '<option value="">-- Pilih Buku --</option>';
-  data.buku.filter(b => b.status === 'Tersedia').forEach(b => {
-    selectBuku.innerHTML += `<option value="${b.id}">${b.judul}</option>`;
+  // Show all books for edit purpose, or filter available if strict
+  // For now, let's show all but mark borrowed ones if we want, but simple for now
+  // To keep it simple: just list all, logic in validation
+  data.buku.forEach(b => {
+    let note = b.status === 'Dipinjam' ? ' (Sedang Dipinjam)' : '';
+    selectBuku.innerHTML += `<option value="${b.id}">${b.judul}${note}</option>`;
   });
 
   if (currentAnggota) selectAnggota.value = currentAnggota;
@@ -363,33 +356,73 @@ function tambahPinjam() {
   const anggotaId = document.getElementById('pilihAnggota').value;
   const bukuId = document.getElementById('pilihBuku').value;
   const tanggal = document.getElementById('tanggalPinjam').value;
+  const status = document.getElementById('statusPinjam').value;
 
   if (anggotaId && bukuId && tanggal) {
+    const isEdit = !!data.editingLoanId;
     const btnId = 'btn-simpan-pinjam';
-    const defaultText = 'Simpan Peminjaman';
+    const defaultText = isEdit ? 'Simpan Perubahan' : 'Simpan Peminjaman';
     const icon = 'fa-solid fa-file-signature';
 
     setLoading(btnId, true);
 
     simulateLoading(() => {
-      // Update status buku
-      const bookIndex = data.buku.findIndex(b => b.id === bukuId);
-      if (bookIndex !== -1) {
-        data.buku[bookIndex].status = 'Dipinjam';
+      // Helper to update book status based on loan status
+      const updateBookStatus = (bId, loanStatus) => {
+        const bookIndex = data.buku.findIndex(b => b.id === bId);
+        if (bookIndex !== -1) {
+          if (loanStatus === 'Dipinjam') {
+            data.buku[bookIndex].status = 'Dipinjam';
+          } else if (loanStatus === 'Dikembalikan') {
+            data.buku[bookIndex].status = 'Tersedia';
+          }
+        }
+      };
+
+      if (data.editingLoanId) {
+        // Logic Edit
+        const index = data.pinjam.findIndex(p => p.id === data.editingLoanId);
+        if (index !== -1) {
+          // Check if book changed or status changed, might need to re-evaluate old book status
+          const oldLoan = data.pinjam[index];
+
+          // If book changed, revert old book to Available (if it was borrowed) - simple logic
+          if (oldLoan.bukuId !== bukuId && oldLoan.status === 'Dipinjam') {
+            updateBookStatus(oldLoan.bukuId, 'Dikembalikan'); // make available
+          }
+
+          data.pinjam[index] = { ...data.pinjam[index], anggotaId, bukuId, tanggal, status };
+
+          // Update new/current book status
+          updateBookStatus(bukuId, status);
+
+          saveData();
+          alert('Data peminjaman berhasil diperbarui!');
+          batalEditPinjam();
+        }
+      } else {
+        // Logic Tambah Baru
+        // Validate if book is available
+        const book = data.buku.find(b => b.id === bukuId);
+        if (book && book.status === 'Dipinjam' && status === 'Dipinjam') {
+          alert('Buku ini sedang dipinjam!');
+          setLoading(btnId, false, defaultText, icon);
+          return;
+        }
 
         data.pinjam.push({
           id: generateId(),
           anggotaId,
           bukuId,
           tanggal,
-          status: 'Dipinjam'
+          status: status || 'Dipinjam'
         });
 
+        updateBookStatus(bukuId, status || 'Dipinjam');
+
         saveData();
-        document.getElementById('pilihAnggota').value = '';
-        document.getElementById('pilihBuku').value = '';
-        document.getElementById('tanggalPinjam').value = '';
         alert('Peminjaman berhasil dicatat!');
+        batalEditPinjam();
       }
       setLoading(btnId, false, defaultText, icon);
     });
@@ -399,21 +432,52 @@ function tambahPinjam() {
   }
 }
 
-function kembalikanBuku(pinjamId) {
-  const pinjamIndex = data.pinjam.findIndex(p => p.id === pinjamId);
-  if (pinjamIndex !== -1) {
-    const borrowing = data.pinjam[pinjamIndex];
+function editPinjam(id) {
+  const pinjam = data.pinjam.find(p => p.id === id);
+  if (pinjam) {
+    document.getElementById('pilihAnggota').value = pinjam.anggotaId;
+    document.getElementById('pilihBuku').value = pinjam.bukuId;
+    document.getElementById('tanggalPinjam').value = pinjam.tanggal;
+    document.getElementById('statusPinjam').value = pinjam.status;
 
-    borrowing.status = 'Dikembalikan';
+    data.editingLoanId = id;
+    const btnSimpan = document.getElementById('btn-simpan-pinjam');
+    btnSimpan.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan';
+    document.getElementById('btn-batal-pinjam').style.display = 'inline-block';
 
-    //kembalikan status ke tersedia
-    const bookIndex = data.buku.findIndex(b => b.id === borrowing.bukuId);
-    if (bookIndex !== -1) {
-      data.buku[bookIndex].status = 'Tersedia';
+    document.querySelector('#pinjam .form-group').scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function batalEditPinjam() {
+  data.editingLoanId = null;
+  document.getElementById('pilihAnggota').value = '';
+  document.getElementById('pilihBuku').value = '';
+  document.getElementById('tanggalPinjam').value = '';
+  document.getElementById('statusPinjam').value = 'Dipinjam';
+
+  const btnSimpan = document.getElementById('btn-simpan-pinjam');
+  btnSimpan.innerHTML = '<i class="fa-solid fa-file-signature"></i> Simpan Peminjaman';
+  document.getElementById('btn-batal-pinjam').style.display = 'none';
+}
+
+function hapusPinjam(id) {
+  if (confirm('Apakah Anda yakin ingin menghapus data peminjaman ini?')) {
+    const pinjamIndex = data.pinjam.findIndex(p => p.id === id);
+    if (pinjamIndex !== -1) {
+      // Jika status masih dipinjam, kembalikan status buku jadi tersedia
+      if (data.pinjam[pinjamIndex].status === 'Dipinjam') {
+        const bukuId = data.pinjam[pinjamIndex].bukuId;
+        const bookIndex = data.buku.findIndex(b => b.id === bukuId);
+        if (bookIndex !== -1) {
+          data.buku[bookIndex].status = 'Tersedia';
+        }
+      }
+
+      data.pinjam.splice(pinjamIndex, 1);
+      saveData();
+      alert('Data peminjaman berhasil dihapus!');
     }
-
-    saveData();
-    alert('Buku berhasil dikembalikan!');
   }
 }
 
@@ -428,11 +492,6 @@ function renderPinjam() {
     const bukuData = data.buku.find(b => b.id === p.bukuId);
     const bukuJudul = bukuData ? bukuData.judul : 'Unknown Book';
 
-    let actionBtn = '';
-    if (p.status === 'Dipinjam') {
-      actionBtn = `<button class="secondary" onclick="kembalikanBuku('${p.id}')" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">Kembalikan</button>`;
-    }
-
     let badgeClass = p.status === 'Dipinjam' ? 'borrowed' : 'returned';
 
     tbody.innerHTML += `
@@ -441,7 +500,16 @@ function renderPinjam() {
         <td>${bukuJudul}</td>
         <td>${formatDate(p.tanggal)}</td>
         <td><span class="badge ${badgeClass}">${p.status}</span></td>
-        <td>${actionBtn}</td>
+        <td>
+            <div class="action-buttons">
+                <button class="btn-icon edit" onclick="editPinjam('${p.id}')" title="Edit">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button class="btn-icon delete" onclick="hapusPinjam('${p.id}')" title="Hapus">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        </td>
       </tr>`;
   });
 }
