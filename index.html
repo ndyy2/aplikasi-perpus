@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perpus Gamelab</title>
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div class="container">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <img src="https://www.gamelab.id/img/logo-gamelab-original-color.webp?v=1.0" alt="Logo Gamelab">
+        <h2>Perpus Gamelab</h2>
+      </div>
+      <ul>
+        <li onclick="showPage('home')" id="nav-home" class="active">
+          <i class="fa-solid fa-house"></i> Beranda
+        </li>
+        <li onclick="showPage('buku')" id="nav-buku">
+          <i class="fa-solid fa-list"></i> Daftar Buku
+        </li>
+        <li onclick="showPage('pinjam')" id="nav-pinjam">
+          <i class="fa-solid fa-hand-holding-hand"></i> Peminjaman
+        </li>
+        <li onclick="showPage('anggota')" id="nav-anggota">
+          <i class="fa-solid fa-users"></i> Anggota
+        </li>
+      </ul>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="content">
+
+      <!-- BERANDA (DASHBOARD) -->
+      <section id="home" class="page active">
+        <h1>Dashboard Perpustakaan</h1>
+
+        <div class="dashboard-grid">
+          <div class="card">
+            <h3>Total Buku</h3>
+            <div class="value" id="stats-total-buku">0</div>
+          </div>
+          <div class="card">
+            <h3>Sedang Dipinjam</h3>
+            <div class="value" id="stats-dipinjam">0</div>
+          </div>
+          <div class="card">
+            <h3>Total Anggota</h3>
+            <div class="value" id="stats-anggota">0</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Selamat Datang</h3>
+          <p>Selamat datang di sistem informasi manajemen Perpustakaan Gamelab. Gunakan navigasi di sebelah kiri untuk
+            mengelola data buku, peminjaman, dan anggota.</p>
+        </div>
+      </section>
+
+      <!-- DAFTAR BUKU -->
+      <section id="buku" class="page">
+        <h1>Daftar Buku</h1>
+
+        <div class="form-group">
+          <input type="text" id="judul" placeholder="Judul Buku">
+          <input type="text" id="penulis" placeholder="Penulis">
+          <input type="number" id="tahun" placeholder="Tahun Terbit">
+          <button id="btn-simpan" onclick="tambahBuku()"><i class="fa-solid fa-plus"></i> Tambah Buku</button>
+          <button id="btn-batal" onclick="batalEdit()" class="secondary" style="display: none;"><i
+              class="fa-solid fa-xmark"></i> Batal Edit</button>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Judul</th>
+                <th>Penulis</th>
+                <th>Tahun</th>
+                <th>Status</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="listBuku"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- PEMINJAMAN -->
+      <section id="pinjam" class="page">
+        <h1>Peminjaman Buku</h1>
+
+        <div class="form-group">
+          <select id="pilihAnggota">
+            <option value="">-- Pilih Peminjam --</option>
+          </select>
+          <select id="pilihBuku">
+            <option value="">-- Pilih Buku --</option>
+          </select>
+          <input type="date" id="tanggalPinjam">
+          <button id="btn-simpan-pinjam" onclick="tambahPinjam()"><i class="fa-solid fa-file-signature"></i> Simpan
+            Peminjaman</button>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Peminjam</th>
+                <th>Buku</th>
+                <th>Tanggal Pinjam</th>
+                <th>Status</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="listPinjam"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ANGGOTA -->
+      <section id="anggota" class="page">
+        <h1>Informasi Anggota</h1>
+
+        <div class="form-group">
+          <input type="text" id="namaAnggota" placeholder="Nama Lengkap">
+          <input type="text" id="alamat" placeholder="Alamat">
+          <button id="btn-simpan-anggota" onclick="tambahAnggota()"><i class="fa-solid fa-user-plus"></i> Tambah
+            Anggota</button>
+          <button id="btn-batal-anggota" onclick="batalEditAnggota()" class="secondary" style="display: none;"><i
+              class="fa-solid fa-xmark"></i> Batal Edit</button>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Nama</th>
+                <th>Alamat</th>
+                <th>Bergabung Sejak</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="listAnggota"></tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
